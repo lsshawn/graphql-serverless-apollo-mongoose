@@ -1,25 +1,10 @@
 const { ApolloServer, gql } = require("apollo-server-lambda")
 const Query = require('./resolvers/Query/index')
 const Mutation = require('./resolvers/Mutation/index')
+const { importSchema } = require('graphql-import')
 
-// ? doesn't work in production. Path incorrect in AWS readFileSync
-// const fs = require('fs');
-// const typeDefs = gql(fs.readFileSync("./src/schema.graphql", "utf8").toString())
-const typeDefs = gql`
-  type Query {
-    hello: String
-    todos: [Todo!] !
-  }
-
-  type Mutation {
-    createTodo(content: String!): Todo!
-  }
-
-  type Todo {
-    _id: ID!
-    content: String
-  }
-`
+const schema = importSchema('src/schema.graphql')
+const typeDefs = gql`${schema}`
 
 const resolvers = {
   Query,
