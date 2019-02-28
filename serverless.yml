@@ -17,15 +17,15 @@ provider:
 
 functions:
   graphql:
-    handler: index.handler
+    handler: src/index.handler
     events:
       - http:
-          path: ${self:provider.stage}/graphql
+          path: graphql
           method: post
           cors: true
   playground:
-    handler: index.handler
+    handler: src/index.handler
     events:
       - http:
-          path: ${self:provider.stage}/playground
+          path: playground
           method: get

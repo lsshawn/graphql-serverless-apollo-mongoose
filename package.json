@@ -14,12 +14,13 @@
     "apollo-server-lambda": "^2.4.8",
     "express": "^4.16.4",
     "graphql": "^14.1.1",
+    "graphql-playground-middleware-express": "^1.7.12",
     "graphql-tools": "^4.0.4",
     "lodash": "^4.17.11",
+    "prisma-client-lib": "^1.27.3",
     "serverless-http": "^1.9.1",
     "serverless-offline": "^4.7.0",
-    "serverless-webpack": "^5.2.0",
-    "graphql-playground-middleware-express": "^1.7.12"
+    "serverless-webpack": "^5.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.3.4",
