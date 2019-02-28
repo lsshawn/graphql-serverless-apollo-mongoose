@@ -1,12 +1,13 @@
 const mongoose = require('mongoose')
 const Todo = require('../../db/models/Todo')
 const { ObjectId } = mongoose.Types
+const { connectToDatabase } = require('../../utils')
 
 const createTodo = async (_, { content }, context, info) => {
-  console.log('createTodo')
+  await connectToDatabase()
+
   try {
     const newTodo = { _id: new ObjectId(), content }
-    console.log(Todo)
     await (new Todo(newTodo)).save()
     return newTodo
   } catch (err) {

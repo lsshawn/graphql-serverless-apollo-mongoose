@@ -111,57 +111,22 @@ module.exports = Todo;
 /*!**********************!*\
   !*** ./src/index.js ***!
   \**********************/
-/*! no exports provided */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
 
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var express__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! express */ "express");
-/* harmony import */ var express__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(express__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var serverless_http__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! serverless-http */ "serverless-http");
-/* harmony import */ var serverless_http__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(serverless_http__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var graphql_playground_middleware_express__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! graphql-playground-middleware-express */ "graphql-playground-middleware-express");
-/* harmony import */ var graphql_playground_middleware_express__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(graphql_playground_middleware_express__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var apollo_server_express__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! apollo-server-express */ "apollo-server-express");
-/* harmony import */ var apollo_server_express__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(apollo_server_express__WEBPACK_IMPORTED_MODULE_3__);
-
-
-
-
-const mongoose = __webpack_require__(/*! mongoose */ "mongoose");
-
-mongoose.Promise = global.Promise;
-let isConnected;
-
+const {
+  ApolloServer,
+  gql
+} = __webpack_require__(/*! apollo-server-lambda */ "apollo-server-lambda");
 
 const Query = __webpack_require__(/*! ./resolvers/Query/index */ "./src/resolvers/Query/index.js");
 
-const Mutation = __webpack_require__(/*! ./resolvers/Mutation/index */ "./src/resolvers/Mutation/index.js");
-
-async function connectToDatabase() {
-  if (isConnected) {
-    console.log('=> using existing database connection');
-    return;
-  }
-
-  console.log('=> using new database connection');
-
-  try {
-    const db = await mongoose.connect(config.MONGDB_URI);
-    isConnected = db.connections[0].readyState;
-    console.log('Connected: ', isConnected);
-    return db;
-  } catch (err) {
-    console.log('Mongoose connection error: ', +err);
-  }
-
-  return true;
-} // ? doesn't work in production. Path incorrect in AWS readFileSync
+const Mutation = __webpack_require__(/*! ./resolvers/Mutation/index */ "./src/resolvers/Mutation/index.js"); // ? doesn't work in production. Path incorrect in AWS readFileSync
 // const fs = require('fs');
 // const typeDefs = gql(fs.readFileSync("./src/schema.graphql", "utf8").toString())
 
 
-const typeDefs = apollo_server_express__WEBPACK_IMPORTED_MODULE_3__["gql"]`
+const typeDefs = gql`
   type Query {
     hello: String
     todos: [Todo!] !
@@ -178,39 +143,31 @@ const typeDefs = apollo_server_express__WEBPACK_IMPORTED_MODULE_3__["gql"]`
 `;
 const resolvers = {
   Query,
-  Mutation // const app = express();
-
+  Mutation
 };
-const server = new apollo_server_express__WEBPACK_IMPORTED_MODULE_3__["ApolloServer"]({
+const server = new ApolloServer({
   typeDefs,
   resolvers,
-  path: "/graphql",
-  context: request => {
-    return { ...request
-    };
+  context: ({
+    event,
+    context
+  }) => ({
+    headers: event.headers,
+    functionName: event.functionName,
+    event,
+    context
+  }),
+  playground: {
+    endpoint: process.env.ENDPOINT
   }
 });
-
-exports.playground = async (event, context, callback) => {
-  context.callbackWaitsForEmptyEventLoop = false;
-  await connectToDatabase();
-  return server.playgroundHandler(event, context, callback);
-};
-
-exports.server = async (event, context, callback) => {
-  context.callbackWaitsForEmptyEventLoop = false;
-  await connectToDatabase();
-  return server.graphqlHandler(event, context, callback);
-}; // server.applyMiddleware({
-//   app
-// });
-// app.get("/playground", graphiql({
-//   endpoint: "/graphql"
-// }));
-// const handler = serverless(app);
-// export {
-//   handler
-// };
+exports.handler = server.createHandler({
+  cors: {
+    origin: '*',
+    methods: 'POST',
+    allowHeaders: ['Content-Type', 'Origin', 'Accept']
+  }
+});
 
 /***/ }),
 
@@ -229,17 +186,20 @@ const {
   ObjectId
 } = mongoose.Types;
 
+const {
+  connectToDatabase
+} = __webpack_require__(/*! ../../utils */ "./src/utils.js");
+
 const createTodo = async (_, {
   content
 }, context, info) => {
-  console.log('createTodo');
+  await connectToDatabase();
 
   try {
     const newTodo = {
       _id: new ObjectId(),
       content
     };
-    console.log(Todo);
     await new Todo(newTodo).save();
     return newTodo;
   } catch (err) {
@@ -277,9 +237,21 @@ module.exports = { ...TodoMutation
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
+const mongoose = __webpack_require__(/*! mongoose */ "mongoose");
+
 const Todo = __webpack_require__(/*! ../../db/models/Todo */ "./src/db/models/Todo.js");
 
+const {
+  ObjectId
+} = mongoose.Types;
+
+const {
+  connectToDatabase
+} = __webpack_require__(/*! ../../utils */ "./src/utils.js");
+
 const todos = async (parent, args, context, info) => {
+  await connectToDatabase();
+
   try {
     const list = Todo.find();
     return list;
@@ -316,36 +288,47 @@ module.exports = { ...TodoQuery
 
 /***/ }),
 
-/***/ "apollo-server-express":
-/*!****************************************!*\
-  !*** external "apollo-server-express" ***!
-  \****************************************/
+/***/ "./src/utils.js":
+/*!**********************!*\
+  !*** ./src/utils.js ***!
+  \**********************/
 /*! no static exports found */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
 
-module.exports = require("apollo-server-express");
+const mongoose = __webpack_require__(/*! mongoose */ "mongoose");
+
+mongoose.Promise = global.Promise;
+let isConnected;
+
+exports.connectToDatabase = async () => {
+  if (isConnected) {
+    console.log('=> using existing database connection');
+    return;
+  }
+
+  console.log('=> using new database connection');
+
+  try {
+    let db = await mongoose.connect(process.env.DB);
+    isConnected = db.connections[0].readyState;
+    console.log('Connected: ', isConnected);
+    return db;
+  } catch (err) {
+    console.log(err);
+    throw new Error('Error in connecting to MongoDB: ', err);
+  }
+};
 
 /***/ }),
 
-/***/ "express":
-/*!**************************!*\
-  !*** external "express" ***!
-  \**************************/
+/***/ "apollo-server-lambda":
+/*!***************************************!*\
+  !*** external "apollo-server-lambda" ***!
+  \***************************************/
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = require("express");
-
-/***/ }),
-
-/***/ "graphql-playground-middleware-express":
-/*!********************************************************!*\
-  !*** external "graphql-playground-middleware-express" ***!
-  \********************************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = require("graphql-playground-middleware-express");
+module.exports = require("apollo-server-lambda");
 
 /***/ }),
 
@@ -357,17 +340,6 @@ module.exports = require("graphql-playground-middleware-express");
 /***/ (function(module, exports) {
 
 module.exports = require("mongoose");
-
-/***/ }),
-
-/***/ "serverless-http":
-/*!**********************************!*\
-  !*** external "serverless-http" ***!
-  \**********************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = require("serverless-http");
 
 /***/ })
 

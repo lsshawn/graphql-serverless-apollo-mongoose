@@ -14,18 +14,20 @@ provider:
   runtime: nodejs8.10
   region: us-east-1
   stage: ${opt:stage, 'dev'}
+  environment: ${file(env.yml):${self:provider.stage}}
 
 functions:
+  playground:
+    handler: src/index.handler
+    events:
+      - http:
+          path: playground
+          method: get
+
   graphql:
-    handler: src/index.server
+    handler: src/index.handler
     events:
       - http:
           path: graphql
           method: post
           cors: true
-  playground:
-    handler: src/index.playground
-    events:
-      - http:
-          path: playground
-          method: get

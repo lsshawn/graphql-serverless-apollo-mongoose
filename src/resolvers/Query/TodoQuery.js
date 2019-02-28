@@ -1,6 +1,10 @@
+const mongoose = require('mongoose')
 const Todo = require('../../db/models/Todo')
+const { connectToDatabase } = require('../../utils')
 
 const todos = async (parent, args, context, info) => {
+  await connectToDatabase()
+
   try {
     const list = Todo.find()
     return list
