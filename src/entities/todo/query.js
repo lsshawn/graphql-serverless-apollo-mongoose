@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-const Todo = require('../../db/models/Todo')
+const Todo = require('./model')
 const { connectToDatabase } = require('../../utils')
 
 const todos = async (parent, args, context, info) => {

@@ -1,10 +1,11 @@
 const { ApolloServer, gql } = require("apollo-server-lambda")
-const Query = require('./resolvers/Query/index')
-const Mutation = require('./resolvers/Mutation/index')
-const { importSchema } = require('graphql-import')
+// const Query = require('./resolvers/query')
+// const Mutation = require('./resolvers/mutation')
+const { Query, Mutation } = require('./resolvers')
+// const { importSchema } = require('graphql-import')
 
-const schema = importSchema('src/schema.graphql')
-const typeDefs = gql`${schema}`
+// const schema = importSchema('src/schema.graphql')
+const typeDefs = require('./typedefs')
 
 const resolvers = {
   Query,
