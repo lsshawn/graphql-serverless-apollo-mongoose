@@ -12,19 +12,19 @@ custom:
 provider:
   name: aws
   runtime: nodejs8.10
-  region: eu-west-1
+  region: us-east-1
   stage: ${opt:stage, 'dev'}
 
 functions:
   graphql:
-    handler: src/index.handler
+    handler: src/index.server
     events:
       - http:
           path: graphql
           method: post
           cors: true
   playground:
-    handler: src/index.handler
+    handler: src/index.playground
     events:
       - http:
           path: playground

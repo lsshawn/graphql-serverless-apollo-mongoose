@@ -87,16 +87,35 @@ module.exports =
 /************************************************************************/
 /******/ ({
 
+/***/ "./src/db/models/Todo.js":
+/*!*******************************!*\
+  !*** ./src/db/models/Todo.js ***!
+  \*******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+const mongoose = __webpack_require__(/*! mongoose */ "mongoose");
+
+const TodoSchema = new mongoose.Schema({
+  content: {
+    type: String,
+    required: true
+  }
+});
+const Todo = mongoose.model('Todo', TodoSchema);
+module.exports = Todo;
+
+/***/ }),
+
 /***/ "./src/index.js":
 /*!**********************!*\
   !*** ./src/index.js ***!
   \**********************/
-/*! exports provided: handler */
+/*! no exports provided */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "handler", function() { return handler; });
 /* harmony import */ var express__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! express */ "express");
 /* harmony import */ var express__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(express__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var serverless_http__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! serverless-http */ "serverless-http");
@@ -109,10 +128,35 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+const mongoose = __webpack_require__(/*! mongoose */ "mongoose");
 
-const Query = __webpack_require__(/*! ./resolvers/Query */ "./src/resolvers/Query.js");
+mongoose.Promise = global.Promise;
+let isConnected;
 
-const Link = __webpack_require__(/*! ./resolvers/Link */ "./src/resolvers/Link.js"); // ? doesn't work in production. Path incorrect in AWS readFileSync
+
+const Query = __webpack_require__(/*! ./resolvers/Query/index */ "./src/resolvers/Query/index.js");
+
+const Mutation = __webpack_require__(/*! ./resolvers/Mutation/index */ "./src/resolvers/Mutation/index.js");
+
+async function connectToDatabase() {
+  if (isConnected) {
+    console.log('=> using existing database connection');
+    return;
+  }
+
+  console.log('=> using new database connection');
+
+  try {
+    const db = await mongoose.connect(config.MONGDB_URI);
+    isConnected = db.connections[0].readyState;
+    console.log('Connected: ', isConnected);
+    return db;
+  } catch (err) {
+    console.log('Mongoose connection error: ', +err);
+  }
+
+  return true;
+} // ? doesn't work in production. Path incorrect in AWS readFileSync
 // const fs = require('fs');
 // const typeDefs = gql(fs.readFileSync("./src/schema.graphql", "utf8").toString())
 
@@ -120,19 +164,23 @@ const Link = __webpack_require__(/*! ./resolvers/Link */ "./src/resolvers/Link.j
 const typeDefs = apollo_server_express__WEBPACK_IMPORTED_MODULE_3__["gql"]`
   type Query {
     hello: String
-    feed: [Link!]!
+    todos: [Todo!] !
   }
 
-  type Link {
-    id: ID!
-    description: String!
+  type Mutation {
+    createTodo(content: String!): Todo!
+  }
+
+  type Todo {
+    _id: ID!
+    content: String
   }
 `;
 const resolvers = {
   Query,
-  Link
+  Mutation // const app = express();
+
 };
-const app = express__WEBPACK_IMPORTED_MODULE_0___default()();
 const server = new apollo_server_express__WEBPACK_IMPORTED_MODULE_3__["ApolloServer"]({
   typeDefs,
   resolvers,
@@ -142,46 +190,128 @@ const server = new apollo_server_express__WEBPACK_IMPORTED_MODULE_3__["ApolloSer
     };
   }
 });
-server.applyMiddleware({
-  app
-});
-app.get("/playground", graphql_playground_middleware_express__WEBPACK_IMPORTED_MODULE_2___default()({
-  endpoint: "/graphql"
-}));
-const handler = serverless_http__WEBPACK_IMPORTED_MODULE_1___default()(app);
 
+exports.playground = async (event, context, callback) => {
+  context.callbackWaitsForEmptyEventLoop = false;
+  await connectToDatabase();
+  return server.playgroundHandler(event, context, callback);
+};
+
+exports.server = async (event, context, callback) => {
+  context.callbackWaitsForEmptyEventLoop = false;
+  await connectToDatabase();
+  return server.graphqlHandler(event, context, callback);
+}; // server.applyMiddleware({
+//   app
+// });
+// app.get("/playground", graphiql({
+//   endpoint: "/graphql"
+// }));
+// const handler = serverless(app);
+// export {
+//   handler
+// };
 
 /***/ }),
 
-/***/ "./src/resolvers/Link.js":
-/*!*******************************!*\
-  !*** ./src/resolvers/Link.js ***!
-  \*******************************/
+/***/ "./src/resolvers/Mutation/TodoMutation.js":
+/*!************************************************!*\
+  !*** ./src/resolvers/Mutation/TodoMutation.js ***!
+  \************************************************/
 /*! no static exports found */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
 
+const mongoose = __webpack_require__(/*! mongoose */ "mongoose");
 
+const Todo = __webpack_require__(/*! ../../db/models/Todo */ "./src/db/models/Todo.js");
+
+const {
+  ObjectId
+} = mongoose.Types;
+
+const createTodo = async (_, {
+  content
+}, context, info) => {
+  console.log('createTodo');
+
+  try {
+    const newTodo = {
+      _id: new ObjectId(),
+      content
+    };
+    console.log(Todo);
+    await new Todo(newTodo).save();
+    return newTodo;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+module.exports = {
+  createTodo
+};
 
 /***/ }),
 
-/***/ "./src/resolvers/Query.js":
-/*!********************************!*\
-  !*** ./src/resolvers/Query.js ***!
-  \********************************/
+/***/ "./src/resolvers/Mutation/index.js":
+/*!*****************************************!*\
+  !*** ./src/resolvers/Mutation/index.js ***!
+  \*****************************************/
 /*! no static exports found */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
 
-function feed(parent, args, context, info) {
-  return "links";
-}
+"use strict";
+
+
+const TodoMutation = __webpack_require__(/*! ./TodoMutation */ "./src/resolvers/Mutation/TodoMutation.js");
+
+module.exports = { ...TodoMutation
+};
+
+/***/ }),
+
+/***/ "./src/resolvers/Query/TodoQuery.js":
+/*!******************************************!*\
+  !*** ./src/resolvers/Query/TodoQuery.js ***!
+  \******************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+const Todo = __webpack_require__(/*! ../../db/models/Todo */ "./src/db/models/Todo.js");
+
+const todos = async (parent, args, context, info) => {
+  try {
+    const list = Todo.find();
+    return list;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
 
 function hello() {
   return "world";
 }
 
 module.exports = {
-  feed,
+  todos,
   hello
+};
+
+/***/ }),
+
+/***/ "./src/resolvers/Query/index.js":
+/*!**************************************!*\
+  !*** ./src/resolvers/Query/index.js ***!
+  \**************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const TodoQuery = __webpack_require__(/*! ./TodoQuery */ "./src/resolvers/Query/TodoQuery.js");
+
+module.exports = { ...TodoQuery
 };
 
 /***/ }),
@@ -216,6 +346,17 @@ module.exports = require("express");
 /***/ (function(module, exports) {
 
 module.exports = require("graphql-playground-middleware-express");
+
+/***/ }),
+
+/***/ "mongoose":
+/*!***************************!*\
+  !*** external "mongoose" ***!
+  \***************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("mongoose");
 
 /***/ }),
 
