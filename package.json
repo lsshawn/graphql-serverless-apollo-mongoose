@@ -12,12 +12,14 @@
   "dependencies": {
     "apollo-server-express": "^2.4.8",
     "apollo-server-lambda": "^2.4.8",
+    "bcryptjs": "^2.4.3",
     "express": "^4.16.4",
     "graphql": "^14.1.1",
     "graphql-playground-middleware-express": "^1.7.12",
     "graphql-tools": "^4.0.4",
+    "jsonwebtoken": "^8.5.0",
     "lodash": "^4.17.11",
-    "prisma-client-lib": "^1.27.3",
+    "mongoose": "^5.4.16",
     "serverless-http": "^1.9.1",
     "serverless-offline": "^4.7.0",
     "serverless-webpack": "^5.2.0"

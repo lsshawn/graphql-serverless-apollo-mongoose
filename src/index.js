@@ -5,7 +5,6 @@ import {
   ApolloServer,
   gql
 } from "apollo-server-express";
-import { prisma } from './generated/prisma-client'
 const Query = require('./resolvers/Query')
 const Link = require('./resolvers/Link')
 
@@ -38,8 +37,7 @@ const server = new ApolloServer({
   path: "/graphql",
   context: request => {
     return {
-      ...request,
-      prisma
+      ...request
     }
   }
 });
