@@ -5,8 +5,8 @@
 
 # Production
 
-1. Playground: https://rcklbs1n45.execute-api.eu-west-1.amazonaws.com/dev/playground
-2. API endpoint: https://rcklbs1n45.execute-api.eu-west-1.amazonaws.com/dev/graphql
+1. Playground: https://vwlp0rdsaa.execute-api.us-east-1.amazonaws.com/dev/playground
+2. API endpoint: https://vwlp0rdsaa.execute-api.us-east-1.amazonaws.com/dev/graphql
 
 # Prisma
 
