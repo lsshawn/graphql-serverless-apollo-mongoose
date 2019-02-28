@@ -6,16 +6,27 @@ import {
   gql
 } from "apollo-server-express";
 import { prisma } from './generated/prisma-client'
+const Query = require('./resolvers/Query')
 const Link = require('./resolvers/Link')
 
-const fs = require('fs');
-const typeDefs = gql(fs.readFileSync("./src/schema.graphql", "utf8").toString())
+// ? doesn't work in production. Path incorrect in AWS readFileSync
+// const fs = require('fs');
+// const typeDefs = gql(fs.readFileSync("./src/schema.graphql", "utf8").toString())
 
+const typeDefs = gql`
+  type Query {
+    hello: String
+    feed: [Link!]!
+  }
+
+  type Link {
+    id: ID!
+    description: String!
+  }
+`
 
 const resolvers = {
-  Query: {
-    hello: () => "world"
-  },
+  Query,
   Link
 }
 

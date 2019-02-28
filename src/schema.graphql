@@ -1,8 +1,0 @@
-type Query {
-  hello: String
-}
-
-type Link {
-  id: ID!
-  description: String!
-}
