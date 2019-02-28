@@ -1,0 +1,31 @@
+service: serverless-graphql
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+
+custom:
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  region: eu-west-1
+  stage: ${opt:stage, 'dev'}
+
+functions:
+  graphql:
+    handler: index.handler
+    events:
+      - http:
+          path: ${self:provider.stage}/graphql
+          method: post
+          cors: true
+  playground:
+    handler: index.handler
+    events:
+      - http:
+          path: ${self:provider.stage}/playground
+          method: get
